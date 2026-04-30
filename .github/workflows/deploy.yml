@@ -1,0 +1,47 @@
+name: Deploy to GitHub Pages
+
+# Запускать скрипт при каждом пуше в главную ветку (обычно main или master)
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch: # Кнопка "Запустить вручную" в вкладке Actions
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Скачать код репозитория
+        uses: actions/checkout@v4
+
+      - name: Настроить Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Установить зависимости
+        run: npm install
+
+      - name: Собрать проект (билд)
+        run: npm run build
+
+      - name: Загрузить собранные файлы
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist # Vite сохраняет готовый сайт в папку dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Опубликовать на GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
